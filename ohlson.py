@@ -1,14 +1,13 @@
-import math
+def calculate_o_score(fin):
+    # Safely extract values
+    total_assets = fin.get("total_assets", 0) or 0
+    total_liabilities = fin.get("total_liabilities", 0) or 0
+    current_assets = fin.get("current_assets", 0) or 0
+    current_liabilities = fin.get("current_liabilities", 0) or 0
+    net_income = fin.get("net_income", 0) or 0
+    prev_net_income = fin.get("prev_net_income", net_income) or net_income
 
-def calculate_o_score(
-    total_assets,
-    total_liabilities,
-    current_assets,
-    current_liabilities,
-    net_income,
-    prev_net_income
-):
-    # Hard safety to prevent ZeroDivisionError
+    # Prevent division by zero
     total_assets = max(total_assets, 1)
     current_assets = max(current_assets, 1)
 
@@ -17,26 +16,8 @@ def calculate_o_score(
         - 0.407 * (net_income / total_assets)
         + 6.03 * (total_liabilities / total_assets)
         + 0.076 * (current_liabilities / current_assets)
-        - 1.43 * (net_income > 0)
-        - 2.37 * (net_income > prev_net_income)
+        - 1.43 * (1 if net_income > 0 else 0)
+        - 2.37 * (1 if net_income > prev_net_income else 0)
     )
 
     return o_score
-
-    X = 1 if total_liabilities > total_assets else 0
-    Y = 1 if (net_income < 0 and prev_net_income < 0) else 0
-    Z = (net_income - prev_net_income) / (abs(net_income) + abs(prev_net_income) + 1)
-
-    o_score = (
-        -1.32
-        - 0.407 * math.log(total_assets)
-        + 6.03 * (total_liabilities / total_assets)
-        - 1.43 * (working_capital / total_assets)
-        + 0.076 * (current_liabilities / current_assets)
-        - 1.72 * X
-        - 2.37 * (net_income / total_assets)
-        - 1.83 * Y
-        + 0.285 * Z
-    )
-
-    return round(o_score, 2)
