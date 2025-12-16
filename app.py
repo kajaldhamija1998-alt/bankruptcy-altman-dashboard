@@ -47,15 +47,8 @@ if st.button("Analyze Company"):
     )
 
     # -------- Ohlson O-score --------
-    o_score = calculate_o_score(
-        total_assets=financials["total_assets"],
-        total_liabilities=financials["total_liabilities"],
-        working_capital=financials["current_assets"] - financials["current_liabilities"],
-        current_assets=financials["current_assets"],
-        current_liabilities=financials["current_liabilities"],
-        net_income=financials["net_income"],
-        prev_net_income=financials["net_income"]  # fallback
-    )
+    o_score = calculate_o_score(financials)
+
 
     # -------- Stress Indicators --------
     stress = stress_indicators(financials)
