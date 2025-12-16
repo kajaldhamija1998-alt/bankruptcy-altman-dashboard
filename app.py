@@ -1,101 +1,85 @@
 import streamlit as st
-from pdf_extractor import extract_financials
+
+from screener_fetcher import fetch_screener_data
+from data_mapper import map_financials
 from altman import calculate_z_score
 from ohlson import calculate_o_score
+from stress_checks import stress_indicators
+from verdict_engine import final_verdict
 
-st.set_page_config(page_title="Bankruptcy Risk Dashboard")
+import joblib
+import pandas as pd
 
-st.title("📉 Bankruptcy Prediction Dashboard (Altman Z-Score)")
+st.set_page_config(page_title="Automated Financial Distress Predictor")
 
-st.write("Upload annual report PDF or enter values manually if extraction fails.")
+st.title("📉 Automated Bankruptcy & Financial Distress Prediction")
 
-uploaded_file = st.file_uploader("Upload Annual Report (PDF)", type="pdf")
-
-st.subheader("Market Data")
-market_value_equity = st.number_input(
-    "Market Value of Equity (Market Capitalization)",
-    min_value=0.0
+company_code = st.text_input(
+    "Enter Company Code (as per Screener.in)",
+    value="TATAMOTORS"
 )
 
-data = None
+if st.button("Analyze Company"):
 
-if uploaded_file:
-    with st.spinner("Extracting financial data from PDF..."):
-        data = extract_financials(uploaded_file)
+    with st.spinner("Fetching financial data from Screener..."):
+        raw_data = fetch_screener_data(company_code)
 
-    if data is None or None in data.values():
-        st.warning("PDF extraction incomplete. Please enter values manually.")
+    if not raw_data:
+        st.error("Could not fetch data. Check company code.")
+        st.stop()
 
-st.subheader("Financial Inputs")
+    financials = map_financials(raw_data)
 
-working_capital = st.number_input(
-    "Working Capital",
-    value=0.0 if not data else data["working_capital"] or 0.0
-)
-retained_earnings = st.number_input(
-    "Retained Earnings",
-    value=0.0 if not data else data["retained_earnings"] or 0.0
-)
-ebit = st.number_input(
-    "EBIT",
-    value=0.0 if not data else data["ebit"] or 0.0
-)
-total_assets = st.number_input(
-    "Total Assets",
-    value=1.0 if not data else data["total_assets"] or 1.0
-)
-total_liabilities = st.number_input(
-    "Total Liabilities",
-    value=1.0 if not data else data["total_liabilities"] or 1.0
-)
-sales = st.number_input(
-    "Sales / Revenue",
-    value=1.0 if not data else data["sales"] or 1.0
-)
+    st.subheader("Extracted Financial Data")
+    st.dataframe(pd.DataFrame(financials.items(), columns=["Metric", "Value"]))
 
-if st.button("Calculate Z-Score"):
-    inputs = {
-        "working_capital": working_capital,
-        "retained_earnings": retained_earnings,
-        "ebit": ebit,
-        "total_assets": total_assets,
-        "total_liabilities": total_liabilities,
-        "sales": sales
-    }
-
-    z = calculate_z_score(inputs, market_value_equity)
-
-    st.metric("Altman Z-Score", z)
-
-    if z > 2.99:
-        st.success("Safe Zone: Low Bankruptcy Risk")
-    elif z >= 1.81:
-        st.warning("Grey Zone: Moderate Risk")
-    else:
-        st.error("Distress Zone: High Bankruptcy Risk")
-        
-st.divider()
-st.header("📊 Ohlson O-Score (Bankruptcy Probability Model)")
-
-current_assets = st.number_input("Current Assets", value=1.0)
-current_liabilities = st.number_input("Current Liabilities", value=1.0)
-net_income = st.number_input("Net Income (Current Year)", value=0.0)
-prev_net_income = st.number_input("Net Income (Previous Year)", value=0.0)
-
-if st.button("Calculate O-Score"):
-    o_score = calculate_o_score(
-        total_assets,
-        total_liabilities,
-        working_capital,
-        current_assets,
-        current_liabilities,
-        net_income,
-        prev_net_income
+    # -------- Altman Z-score --------
+    z_score = calculate_z_score(
+        {
+            "working_capital": financials["current_assets"] - financials["current_liabilities"],
+            "retained_earnings": financials["retained_earnings"],
+            "ebit": financials["ebit"],
+            "total_assets": financials["total_assets"],
+            "total_liabilities": financials["total_liabilities"],
+            "sales": financials["sales"]
+        },
+        market_value_equity=financials["total_assets"]  # proxy
     )
 
-    st.metric("Ohlson O-Score", o_score)
+    # -------- Ohlson O-score --------
+    o_score = calculate_o_score(
+        total_assets=financials["total_assets"],
+        total_liabilities=financials["total_liabilities"],
+        working_capital=financials["current_assets"] - financials["current_liabilities"],
+        current_assets=financials["current_assets"],
+        current_liabilities=financials["current_liabilities"],
+        net_income=financials["net_income"],
+        prev_net_income=financials["net_income"]  # fallback
+    )
 
-    if o_score > 0:
-        st.error("High probability of bankruptcy")
-    else:
-        st.success("Low probability of bankruptcy")
+    # -------- Stress Indicators --------
+    stress = stress_indicators(financials)
+
+    # -------- Logistic Regression --------
+    model = joblib.load("regression_model.pkl")
+
+    X = [[
+        (financials["current_assets"] - financials["current_liabilities"]) / financials["total_assets"],
+        financials["retained_earnings"] / financials["total_assets"],
+        financials["ebit"] / financials["total_assets"],
+        financials["total_liabilities"] / financials["total_assets"],
+        financials["cfo"] / max(financials["total_liabilities"], 1)
+    ]]
+
+    prob = model.predict_proba(X)[0][1]
+
+    # -------- Final Verdict --------
+    verdict = final_verdict(z_score, o_score, stress, prob)
+
+    st.subheader("Results")
+    st.metric("Altman Z-Score", round(z_score, 2))
+    st.metric("Ohlson O-Score", round(o_score, 2))
+    st.metric("Probability of Distress", round(prob, 2))
+
+    st.subheader("Final Assessment")
+    st.success(verdict)
