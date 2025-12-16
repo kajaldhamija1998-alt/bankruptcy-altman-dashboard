@@ -1,44 +1,30 @@
 def map_financials(raw):
     def get(*keys):
         for k in keys:
-            if k in raw and raw[k] is not None:
+            if k in raw and raw[k] not in [None, 0]:
                 return raw[k]
         return 0
 
+    # Working Capital proxy
+    working_capital = get("working capital")
+
+    total_assets = get("total assets")
+    total_liabilities = get("total liabilities")
+
     return {
-        "total_assets": get("total assets", "total assets (₹ cr)", "assets"),
-        "total_liabilities": get(
-            "total liabilities",
-            "total liabilities (₹ cr)",
-            "liabilities"
-        ),
-        "current_assets": get(
-            "current assets",
-            "current assets (₹ cr)"
-        ),
-        "current_liabilities": get(
-            "current liabilities",
-            "current liabilities (₹ cr)"
-        ),
-        "net_income": get(
-            "net profit",
-            "profit after tax",
-            "net income"
-        ),
-        "retained_earnings": get(
-            "reserves",
-            "retained earnings"
-        ),
-        "ebit": get(
-            "operating profit",
-            "ebit"
-        ),
-        "market_value_equity": get(
-            "market cap",
-            "market capitalization"
-        ),
-        "sales": get(
-            "sales",
-            "revenue"
-        )
+        "total_assets": total_assets,
+        "total_liabilities": total_liabilities,
+
+        # Approximation (standard practice)
+        "current_assets": max(working_capital, 0),
+        "current_liabilities": max(-working_capital, 0),
+
+        "sales": get("sales"),
+        "net_income": get("net profit"),
+        "retained_earnings": get("reserves"),
+        "ebit": get("operating profit"),
+        "market_value_equity": get("market cap"),
+
+        # CFO proxy
+        "cfo": get("operating profit")
     }
