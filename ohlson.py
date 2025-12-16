@@ -1,23 +1,36 @@
+import math
+
 def calculate_o_score(fin):
-    # Safely extract values
-    total_assets = fin.get("total_assets", 0) or 0
-    total_liabilities = fin.get("total_liabilities", 0) or 0
-    current_assets = fin.get("current_assets", 0) or 0
-    current_liabilities = fin.get("current_liabilities", 0) or 0
-    net_income = fin.get("net_income", 0) or 0
-    prev_net_income = fin.get("prev_net_income", net_income) or net_income
+    """
+    Ohlson O-Score (logit-based bankruptcy model)
+    Higher score => higher distress probability
+    """
 
-    # Prevent division by zero
-    total_assets = max(total_assets, 1)
-    current_assets = max(current_assets, 1)
+    TA = fin["total_assets"]
+    TL = fin["total_liabilities"]
+    CA = fin["current_assets"]
+    CL = fin["current_liabilities"]
+    NI = fin["net_income"]
+    WC = CA - CL
 
-    o_score = (
+    if TA == 0:
+        return 0
+
+    X1 = math.log(TA)
+    X2 = TL / TA
+    X3 = WC / TA
+    X4 = CL / CA if CA > 0 else 0
+    X5 = 1 if NI < 0 else 0
+    X6 = NI / TA
+
+    o = (
         -1.32
-        - 0.407 * (net_income / total_assets)
-        + 6.03 * (total_liabilities / total_assets)
-        + 0.076 * (current_liabilities / current_assets)
-        - 1.43 * (1 if net_income > 0 else 0)
-        - 2.37 * (1 if net_income > prev_net_income else 0)
+        - 0.407 * X1
+        + 6.03 * X2
+        - 1.43 * X3
+        + 0.076 * X4
+        - 1.72 * X5
+        - 2.37 * X6
     )
 
-    return o_score
+    return o
