@@ -1,18 +1,14 @@
-import math
+def final_verdict(z_score, o_score, stress, prob=None):
+    """
+    Finance-theory based verdict (NO ML dependency)
+    """
 
-def final_verdict(z_score, o_score, ml_prob):
-    # Convert Ohlson O-score to probability
-    o_prob = 1 / (1 + math.exp(-o_score))
+    red_flags = sum(stress.values())
 
-    flags = {
-        "z_distress": z_score < 2.99,
-        "o_distress": o_prob > 0.5,
-        "ml_distress": ml_prob > 0.35
-    }
+    if z_score < 1.81 or o_score > 0.5 or red_flags >= 2:
+        return "⚠️ High Risk of Financial Distress"
 
-    distress_count = sum(flags.values())
+    if 1.81 <= z_score <= 2.99:
+        return "⚠️ Grey Zone – Monitor Closely"
 
-    if distress_count >= 1:
-        return "Financial Distress Risk"
-    else:
-        return "Financially Stable"
+    return "✅ Financially Stable"
