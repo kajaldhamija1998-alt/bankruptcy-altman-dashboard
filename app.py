@@ -6,31 +6,69 @@ st.set_page_config(page_title="Bankruptcy Risk Dashboard")
 
 st.title("📉 Bankruptcy Prediction Dashboard (Altman Z-Score)")
 
-uploaded_file = st.file_uploader(
-    "Upload Annual Report PDF", type="pdf"
-)
+st.write("Upload annual report PDF or enter values manually if extraction fails.")
 
+uploaded_file = st.file_uploader("Upload Annual Report (PDF)", type="pdf")
+
+st.subheader("Market Data")
 market_value_equity = st.number_input(
-    "Enter Market Value of Equity (₹)",
-    min_value=0.0,
-    step=1000000.0
+    "Market Value of Equity (Market Capitalization)",
+    min_value=0.0
 )
 
-if uploaded_file and market_value_equity > 0:
-    with st.spinner("Reading annual report..."):
+data = None
+
+if uploaded_file:
+    with st.spinner("Extracting financial data from PDF..."):
         data = extract_financials(uploaded_file)
 
-    if None in data.values():
-        st.error("Could not extract all required financial values from the PDF.")
+    if data is None or None in data.values():
+        st.warning("PDF extraction incomplete. Please enter values manually.")
+
+st.subheader("Financial Inputs")
+
+working_capital = st.number_input(
+    "Working Capital",
+    value=0.0 if not data else data["working_capital"] or 0.0
+)
+retained_earnings = st.number_input(
+    "Retained Earnings",
+    value=0.0 if not data else data["retained_earnings"] or 0.0
+)
+ebit = st.number_input(
+    "EBIT",
+    value=0.0 if not data else data["ebit"] or 0.0
+)
+total_assets = st.number_input(
+    "Total Assets",
+    value=1.0 if not data else data["total_assets"] or 1.0
+)
+total_liabilities = st.number_input(
+    "Total Liabilities",
+    value=1.0 if not data else data["total_liabilities"] or 1.0
+)
+sales = st.number_input(
+    "Sales / Revenue",
+    value=1.0 if not data else data["sales"] or 1.0
+)
+
+if st.button("Calculate Z-Score"):
+    inputs = {
+        "working_capital": working_capital,
+        "retained_earnings": retained_earnings,
+        "ebit": ebit,
+        "total_assets": total_assets,
+        "total_liabilities": total_liabilities,
+        "sales": sales
+    }
+
+    z = calculate_z_score(inputs, market_value_equity)
+
+    st.metric("Altman Z-Score", z)
+
+    if z > 2.99:
+        st.success("Safe Zone: Low Bankruptcy Risk")
+    elif z >= 1.81:
+        st.warning("Grey Zone: Moderate Risk")
     else:
-        z_score = calculate_z_score(data, market_value_equity)
-
-        st.subheader("Result")
-        st.metric("Altman Z-Score", z_score)
-
-        if z_score > 2.99:
-            st.success("Safe Zone: Low Bankruptcy Risk")
-        elif z_score >= 1.81:
-            st.warning("Grey Zone: Moderate Financial Risk")
-        else:
-            st.error("Distress Zone: High Bankruptcy Risk")
+        st.error("Distress Zone: High Bankruptcy Risk")
