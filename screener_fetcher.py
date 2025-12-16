@@ -1,41 +1,50 @@
 import requests
 from bs4 import BeautifulSoup
 
-
-def clean_number(text):
-    try:
-        return float(
-            text.replace(",", "")
-                .replace("₹", "")
-                .replace("%", "")
-                .strip()
-        )
-    except:
-        return None
-
-
 def fetch_screener_data(company_code):
     url = f"https://www.screener.in/company/{company_code}/"
     headers = {"User-Agent": "Mozilla/5.0"}
+    r = requests.get(url, headers=headers)
+    soup = BeautifulSoup(r.text, "html.parser")
 
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
+    data = {
+        "sales": None,
+        "total_assets": None,
+        "total_liabilities": None,
+        "ebit": None,
+        "market_value_equity": None,
+        "current_assets": None,
+        "current_liabilities": None,
+        "net_income": None,
+        "retained_earnings": None,
+        "cfo": None
+    }
 
-    data = {}
+    # ---- Extract key-value pairs ----
+    for row in soup.select("li.flex.flex-space-between"):
+        label = row.select_one(".name")
+        value = row.select_one(".number")
 
-    for table in soup.find_all("table"):
-        for row in table.find_all("tr"):
-            cols = [c.text.strip() for c in row.find_all(["th", "td"])]
+        if not label or not value:
+            continue
 
-            if len(cols) < 2:
-                continue
+        key = label.text.strip().lower()
+        val = value.text.replace(",", "").replace("₹", "").strip()
 
-            key = cols[0].lower()
+        try:
+            val = float(val)
+        except:
+            continue
 
-            for val in reversed(cols[1:]):
-                num = clean_number(val)
-                if num is not None:
-                    data[key] = num
-                    break
+        if "sales" in key:
+            data["sales"] = val
+        elif "total assets" in key:
+            data["total_assets"] = val
+        elif "total liabilities" in key:
+            data["total_liabilities"] = val
+        elif "operating profit" in key:
+            data["ebit"] = val
+        elif "market cap" in key:
+            data["market_value_equity"] = val
 
     return data
