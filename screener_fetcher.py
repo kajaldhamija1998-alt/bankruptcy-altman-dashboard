@@ -1,6 +1,17 @@
 import requests
-import pandas as pd
 from bs4 import BeautifulSoup
+
+def clean_number(x):
+    try:
+        return float(
+            x.replace(",", "")
+             .replace("₹", "")
+             .replace("%", "")
+             .strip()
+        )
+    except:
+        return None
+
 
 def fetch_screener_data(company_code):
     url = f"https://www.screener.in/company/{company_code}/"
@@ -14,8 +25,4 @@ def fetch_screener_data(company_code):
 
     for table in tables:
         for row in table.find_all("tr"):
-            cols = [c.text.strip() for c in row.find_all(["th", "td"])]
-            if len(cols) >= 2:
-                data[cols[0].lower()] = cols[-1].replace(",", "")
-
-    return data
+            cols = [c.text.]()
