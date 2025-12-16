@@ -1,6 +1,7 @@
 import streamlit as st
 from pdf_extractor import extract_financials
 from altman import calculate_z_score
+from ohlson import calculate_o_score
 
 st.set_page_config(page_title="Bankruptcy Risk Dashboard")
 
@@ -72,3 +73,29 @@ if st.button("Calculate Z-Score"):
         st.warning("Grey Zone: Moderate Risk")
     else:
         st.error("Distress Zone: High Bankruptcy Risk")
+        
+st.divider()
+st.header("📊 Ohlson O-Score (Bankruptcy Probability Model)")
+
+current_assets = st.number_input("Current Assets", value=1.0)
+current_liabilities = st.number_input("Current Liabilities", value=1.0)
+net_income = st.number_input("Net Income (Current Year)", value=0.0)
+prev_net_income = st.number_input("Net Income (Previous Year)", value=0.0)
+
+if st.button("Calculate O-Score"):
+    o_score = calculate_o_score(
+        total_assets,
+        total_liabilities,
+        working_capital,
+        current_assets,
+        current_liabilities,
+        net_income,
+        prev_net_income
+    )
+
+    st.metric("Ohlson O-Score", o_score)
+
+    if o_score > 0:
+        st.error("High probability of bankruptcy")
+    else:
+        st.success("Low probability of bankruptcy")
