@@ -1,13 +1,44 @@
 def map_financials(raw):
+    def get(*keys):
+        for k in keys:
+            if k in raw and raw[k] is not None:
+                return raw[k]
+        return 0
+
     return {
-        "total_assets": float(raw.get("total assets", 0)),
-        "total_liabilities": float(raw.get("total liabilities", 0)),
-        "current_assets": float(raw.get("current assets", 0)),
-        "current_liabilities": float(raw.get("current liabilities", 0)),
-        "retained_earnings": float(raw.get("reserves & surplus", 0)),
-        "sales": float(raw.get("sales", 0)),
-        "ebit": float(raw.get("operating profit", 0)),
-        "interest": float(raw.get("interest", 0)),
-        "net_income": float(raw.get("net profit", 0)),
-        "cfo": float(raw.get("cash from operating activity", 0))
+        "total_assets": get("total assets", "total assets (₹ cr)", "assets"),
+        "total_liabilities": get(
+            "total liabilities",
+            "total liabilities (₹ cr)",
+            "liabilities"
+        ),
+        "current_assets": get(
+            "current assets",
+            "current assets (₹ cr)"
+        ),
+        "current_liabilities": get(
+            "current liabilities",
+            "current liabilities (₹ cr)"
+        ),
+        "net_income": get(
+            "net profit",
+            "profit after tax",
+            "net income"
+        ),
+        "retained_earnings": get(
+            "reserves",
+            "retained earnings"
+        ),
+        "ebit": get(
+            "operating profit",
+            "ebit"
+        ),
+        "market_value_equity": get(
+            "market cap",
+            "market capitalization"
+        ),
+        "sales": get(
+            "sales",
+            "revenue"
+        )
     }
