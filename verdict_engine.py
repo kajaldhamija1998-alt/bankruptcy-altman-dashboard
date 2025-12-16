@@ -1,15 +1,18 @@
-def final_verdict(z_score, o_score, stress, prob):
-    """
-    z_score : Altman Z-score
-    o_score : Ohlson O-score
-    stress  : dict from stress_checks
-    prob    : logistic regression probability
-    """
+import math
 
-    if (z_score < 1.81 or o_score > 0) and prob > 0.5:
-        return "High Financial Distress / Bankruptcy Risk"
+def final_verdict(z_score, o_score, ml_prob):
+    # Convert Ohlson O-score to probability
+    o_prob = 1 / (1 + math.exp(-o_score))
 
-    if stress["negative_cfo"] or stress["interest_cover"] < 1.5:
-        return "Moderate Financial Stress"
+    flags = {
+        "z_distress": z_score < 2.99,
+        "o_distress": o_prob > 0.5,
+        "ml_distress": ml_prob > 0.35
+    }
 
-    return "Financially Stable"
+    distress_count = sum(flags.values())
+
+    if distress_count >= 1:
+        return "Financial Distress Risk"
+    else:
+        return "Financially Stable"
