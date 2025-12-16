@@ -1,79 +1,69 @@
 import streamlit as st
+import pandas as pd
 
-from screener_fetcher import fetch_screener_data
-from data_mapper import map_financials
 from altman import calculate_z_score
 from ohlson import calculate_o_score
 from stress_checks import stress_indicators
 from verdict_engine import final_verdict
 
-import joblib
-import pandas as pd
-
 st.set_page_config(page_title="Automated Financial Distress Predictor")
 
 st.title("📉 Automated Bankruptcy & Financial Distress Prediction")
 
-company_code = st.text_input(
-    "Enter Company Code (as per Screener.in)",
-    value="TATAMOTORS"
-)
+st.markdown("""
+### Instructions
+Upload a **CSV file** containing financial statement data.
+The model will automatically compute:
+- Altman Z-Score
+- Ohlson O-Score
+- Financial Stress Indicators
+- Final Distress Verdict
+""")
 
-if st.button("Analyze Company"):
+uploaded = st.file_uploader("Upload Financials CSV", type="csv")
 
-    with st.spinner("Fetching financial data from Screener..."):
-        raw_data = fetch_screener_data(company_code)
+if uploaded:
+    df = pd.read_csv(uploaded)
 
-    if not raw_data:
-        st.error("Could not fetch data. Check company code.")
-        st.stop()
+    st.subheader("Uploaded Financial Data")
+    st.dataframe(df)
 
-    financials = map_financials(raw_data)
+    # Use latest year
+    fin = df.iloc[-1].to_dict()
 
-    st.subheader("Extracted Financial Data")
-    st.dataframe(pd.DataFrame(financials.items(), columns=["Metric", "Value"]))
-
-    # -------- Altman Z-score --------
+    # -------- Altman Z-Score --------
     z_score = calculate_z_score(
         {
-            "working_capital": financials["current_assets"] - financials["current_liabilities"],
-            "retained_earnings": financials["retained_earnings"],
-            "ebit": financials["ebit"],
-            "total_assets": financials["total_assets"],
-            "total_liabilities": financials["total_liabilities"],
-            "sales": financials["sales"]
+            "working_capital": fin["current_assets"] - fin["current_liabilities"],
+            "retained_earnings": fin["retained_earnings"],
+            "ebit": fin["ebit"],
+            "total_assets": fin["total_assets"],
+            "total_liabilities": fin["total_liabilities"],
+            "sales": fin["sales"]
         },
-        market_value_equity=financials["total_assets"]  # proxy
+        market_value_equity=fin["market_value_equity"]
     )
 
-    # -------- Ohlson O-score --------
-    o_score = calculate_o_score(financials)
-
+    # -------- Ohlson O-Score --------
+    o_score = calculate_o_score(fin)
 
     # -------- Stress Indicators --------
-    stress = stress_indicators(financials)
+    stress = stress_indicators(fin)
 
-    # -------- Logistic Regression --------
-    model = joblib.load("regression_model.pkl")
-
-    X = [[
-        (financials["current_assets"] - financials["current_liabilities"]) / financials["total_assets"],
-        financials["retained_earnings"] / financials["total_assets"],
-        financials["ebit"] / financials["total_assets"],
-        financials["total_liabilities"] / financials["total_assets"],
-        (financials.get("cfo", 0) or 0) / max(financials.get("total_liabilities", 1), 1)
-
-    ]]
-
-    prob = model.predict_proba(X)[0][1]
-
-    # -------- Final Verdict --------
-    verdict = final_verdict(z_score, o_score, stress, prob)
+    # -------- Final Verdict (NO REGRESSION) --------
+    verdict = final_verdict(
+        z_score=z_score,
+        o_score=o_score,
+        stress=stress,
+        prob=None
+    )
 
     st.subheader("Results")
     st.metric("Altman Z-Score", round(z_score, 2))
     st.metric("Ohlson O-Score", round(o_score, 2))
-    st.metric("Probability of Distress", round(prob, 2))
+
+    st.subheader("Stress Indicators")
+    st.json(stress)
 
     st.subheader("Final Assessment")
     st.success(verdict)
