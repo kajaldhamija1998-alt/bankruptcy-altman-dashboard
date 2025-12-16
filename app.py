@@ -61,7 +61,8 @@ if st.button("Analyze Company"):
         financials["retained_earnings"] / financials["total_assets"],
         financials["ebit"] / financials["total_assets"],
         financials["total_liabilities"] / financials["total_assets"],
-        financials["cfo"] / max(financials["total_liabilities"], 1)
+        (financials.get("cfo", 0) or 0) / max(financials.get("total_liabilities", 1), 1)
+
     ]]
 
     prob = model.predict_proba(X)[0][1]
