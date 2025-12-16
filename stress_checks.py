@@ -1,20 +1,15 @@
 def stress_indicators(fin):
     stress = {}
 
-    cfo = fin.get("cfo", 0) or 0
-    ebit = fin.get("ebit", 0) or 0
-    interest = fin.get("interest", 0) or 0
-    total_liabilities = fin.get("total_liabilities", 0) or 0
-    total_assets = fin.get("total_assets", 0) or 1
-
-    stress["negative_cfo"] = cfo < 0
-
-    # Interest coverage
-    stress["interest_cover"] = (
-        ebit / interest if interest > 0 else float("inf")
+    stress["negative_net_income"] = fin["net_income"] < 0
+    stress["negative_cfo"] = fin["cfo"] < 0
+    stress["high_leverage"] = (
+        fin["total_liabilities"] / fin["total_assets"] > 0.6
+        if fin["total_assets"] > 0 else False
     )
-
-    # Debt ratio
-    stress["debt_ratio"] = total_liabilities / max(total_assets, 1)
+    stress["low_liquidity"] = (
+        fin["current_assets"] / fin["current_liabilities"] < 1
+        if fin["current_liabilities"] > 0 else False
+    )
 
     return stress
