@@ -45,11 +45,8 @@ z_score = calculate_z_score(fin, firm_type)
     stress = stress_indicators(fin)
 
     # -------- Final Verdict (NO REGRESSION) --------
-    verdict = final_verdict(
-        z_score=z_score,
-        o_score=o_score,
-        stress=stress,
-        prob=None
+    verdict = final_verdict(z_score, o_score, stress, firm_type, p_bankruptcy)
+
     )
 
     st.subheader("Results")
