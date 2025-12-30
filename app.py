@@ -8,24 +8,12 @@ from verdict_engine import final_verdict
 
 st.set_page_config(page_title="AI Bankruptcy Predictor")
 
-st.title("📉 AI-Based Bankruptcy & Financial Distress Predictor")
+st.title("AI Bankruptcy & Financial Distress Predictor")
 
-st.markdown("""
-Upload a CSV file with columns:
+uploaded = st.file_uploader("Upload Financial CSV", type="csv")
 
-company_type,
-current_assets, current_liabilities,
-total_assets, total_liabilities,
-retained_earnings, ebit, sales,
-market_value_equity, net_income, cfo
-""")
-
-uploaded = st.file_uploader("Upload Financials CSV", type="csv")
-
-if uploaded is not None:
+if uploaded:
     df = pd.read_csv(uploaded)
-    st.dataframe(df)
-
     fin = df.iloc[-1].to_dict()
 
     firm_type = fin["company_type"]
@@ -36,12 +24,7 @@ if uploaded is not None:
 
     verdict = final_verdict(z_score, o_score, stress, None)
 
-    st.subheader("Results")
-    st.metric("Altman Z-Score", round(z_score, 2))
-    st.metric("Ohlson O-Score", round(o_score, 2))
-
-    st.subheader("Stress Indicators")
+    st.metric("Altman Z-Score", round(z_score,2))
+    st.metric("Ohlson O-Score", round(o_score,2))
     st.json(stress)
-
-    st.subheader("Final Verdict")
     st.success(verdict)
