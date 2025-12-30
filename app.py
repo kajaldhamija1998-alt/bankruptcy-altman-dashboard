@@ -11,8 +11,7 @@ st.set_page_config(page_title="AI Bankruptcy Predictor")
 st.title("📉 AI-Based Bankruptcy & Financial Distress Predictor")
 
 st.markdown("""
-Upload a CSV containing annual financials.
-Required columns:
+Upload a CSV file with columns:
 
 company_type,
 current_assets, current_liabilities,
