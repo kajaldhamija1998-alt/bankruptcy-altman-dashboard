@@ -1,14 +1,24 @@
-def final_verdict(z_score, o_score, stress, prob=None):
-    """
-    Finance-theory based verdict (NO ML dependency)
-    """
+def final_verdict(z_score, o_score, stress, firm_type, p_bankruptcy):
 
-    red_flags = sum(stress.values())
+    # Ohlson override – if default probability is high
+    if o_score > 0.5:
+        return "🚨 Very High Bankruptcy Risk (Ohlson Default Zone)"
 
-    if z_score < 1.81 or o_score > 0.5 or red_flags >= 2:
+    if firm_type == "public_manufacturing":
+        if z_score > 2.99:
+            return "✅ Financially Stable"
+        if z_score >= 1.8:
+            return "⚠️ Grey Zone – Monitor Closely"
         return "⚠️ High Risk of Financial Distress"
 
-    if 1.81 <= z_score <= 2.99:
-        return "⚠️ Grey Zone – Monitor Closely"
+    if firm_type == "private_manufacturing":
+        if z_score > 2.9:
+            return "✅ Financially Stable"
+        return "⚠️ High Risk of Financial Distress"
 
-    return "✅ Financially Stable"
+    if firm_type == "non_manufacturing":
+        if z_score > 2.6:
+            return "✅ Financially Stable"
+        return "⚠️ High Risk of Financial Distress"
+
+    return "Classification Error"
