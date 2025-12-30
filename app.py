@@ -20,7 +20,7 @@ if uploaded:
     o = calculate_o_score(fin)
     stress = stress_indicators(fin)
 
-    verdict = final_verdict(z, o, stress, None)
+    verdict = final_verdict(z, o, stress, firm_type, 0)
 
     st.metric("Altman Z-Score", round(z,2))
     st.metric("Ohlson O-Score", round(o,2))
