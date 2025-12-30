@@ -9,6 +9,8 @@ from verdict_engine import final_verdict
 st.set_page_config(page_title="AI-Based Bankruptcy & Financial Distress Predictor")
 
 st.title("🏦 AI-Based Bankruptcy & Financial Distress Predictor")
+st.caption("Upload annual financial statement data to automatically assess bankruptcy and financial distress risk using Altman Z and Ohlson O models.")
+
 
 st.markdown("""
 ### Instructions
