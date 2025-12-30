@@ -28,7 +28,6 @@ def calculate_o_score(fin):
         - 2.37 * X6
     )
 
-    # Bankruptcy probability
     p_bankruptcy = math.exp(o_score) / (1 + math.exp(o_score))
 
     return o_score, p_bankruptcy
