@@ -14,10 +14,8 @@ def calculate_z_score(fin, firm_type):
     X5 = fin["sales"] / ta
 
     if firm_type == "public_manufacturing":
-        z = 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
+        return 1.2*X1 + 1.4*X2 + 3.3*X3 + 0.6*X4 + 1.0*X5
     elif firm_type == "private_manufacturing":
-        z = 0.717*X1 + 0.847*X2 + 3.107*X3 + 0.420*X4 + 0.998*X5
-    else:
-        z = 6.56*X1 + 3.26*X2 + 6.72*X3 + 1.05*X4
-
-    return z
+        return 0.717*X1 + 0.847*X2 + 3.107*X3 + 0.420*X4 + 0.998*X5
+    else:  # non_manufacturing
+        return 6.56*X1 + 3.26*X2 + 6.72*X3 + 1.05*X4
