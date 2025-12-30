@@ -6,9 +6,9 @@ from ohlson import calculate_o_score
 from stress_checks import stress_indicators
 from verdict_engine import final_verdict
 
-st.set_page_config(page_title="Automated Financial Distress Predictor")
+st.set_page_config(page_title="AI-Based Bankruptcy & Financial Distress Predictor")
 
-st.title("📉 Automated Bankruptcy & Financial Distress Prediction")
+st.title("🏦 AI-Based Bankruptcy & Financial Distress Predictor")
 
 st.markdown("""
 ### Instructions
