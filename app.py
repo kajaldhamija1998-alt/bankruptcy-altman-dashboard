@@ -32,20 +32,14 @@ if uploaded:
     fin = df.iloc[-1].to_dict()
 
     # -------- Altman Z-Score --------
-    z_score = calculate_z_score(
-        {
-            "working_capital": fin["current_assets"] - fin["current_liabilities"],
-            "retained_earnings": fin["retained_earnings"],
-            "ebit": fin["ebit"],
-            "total_assets": fin["total_assets"],
-            "total_liabilities": fin["total_liabilities"],
-            "sales": fin["sales"]
-        },
-        market_value_equity=fin["market_value_equity"]
+   firm_type = fin["company_type"]
+
+z_score = calculate_z_score(fin, firm_type)
+
     )
 
     # -------- Ohlson O-Score --------
-    o_score = calculate_o_score(fin)
+    o_score, p_bankruptcy = calculate_o_score(fin)
 
     # -------- Stress Indicators --------
     stress = stress_indicators(fin)
@@ -60,7 +54,7 @@ if uploaded:
 
     st.subheader("Results")
     st.metric("Altman Z-Score", round(z_score, 2))
-    st.metric("Ohlson O-Score", round(o_score, 2))
+    st.metric("Probability of Bankruptcy", round(p_bankruptcy, 3))
 
     st.subheader("Stress Indicators")
     st.json(stress)
