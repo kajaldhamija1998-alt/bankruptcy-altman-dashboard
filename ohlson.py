@@ -1,11 +1,6 @@
 import math
 
 def calculate_o_score(fin):
-    """
-    Ohlson O-Score (logit-based bankruptcy model)
-    Higher score => higher distress probability
-    """
-
     TA = fin["total_assets"]
     TL = fin["total_liabilities"]
     CA = fin["current_assets"]
@@ -14,7 +9,7 @@ def calculate_o_score(fin):
     WC = CA - CL
 
     if TA == 0:
-        return 0
+        return 0, 0
 
     X1 = math.log(TA)
     X2 = TL / TA
@@ -23,7 +18,7 @@ def calculate_o_score(fin):
     X5 = 1 if NI < 0 else 0
     X6 = NI / TA
 
-    o = (
+    o_score = (
         -1.32
         - 0.407 * X1
         + 6.03 * X2
@@ -33,4 +28,7 @@ def calculate_o_score(fin):
         - 2.37 * X6
     )
 
-    return o
+    # Bankruptcy probability
+    p_bankruptcy = math.exp(o_score) / (1 + math.exp(o_score))
+
+    return o_score, p_bankruptcy
